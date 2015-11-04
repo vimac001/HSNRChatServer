@@ -3,6 +3,7 @@ package HSNRChat.Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ServerHandle implements Runnable {
@@ -12,6 +13,7 @@ public class ServerHandle implements Runnable {
 
     public  ServerHandle(ServerSocket server) {
         this.server = server;
+        this.clients = new ArrayList<TalkerHandle>();
     }
 
     public void broadcast(String msg) {
@@ -27,14 +29,21 @@ public class ServerHandle implements Runnable {
 
         Socket client;
 
-        do{
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 client = server.accept();
+
+                System.out.print("New client @(");
+                System.out.print(client.getInetAddress().getHostAddress());
+                System.out.print(':');
+                System.out.print(client.getPort());
+                System.out.println(").");
+
                 clients.add(new TalkerHandle(client));
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-        }while(true);
+        };
     }
 }

@@ -40,8 +40,10 @@ public class ChatServer {
             do {
                 if(line != null && line != "exit") {
                     listener.broadcast(line);
+                    System.out.println(" << " + line);
                 }
 
+                System.out.print("Message: ");
                 line = br.readLine();
             }while(line != "exit");
         } catch (IOException e) {
