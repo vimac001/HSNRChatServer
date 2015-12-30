@@ -1,4 +1,4 @@
-package HSNRChat.Server.Networking.Database.Exceptions;
+package HSNRChat.Server.Networking.Exceptions;
 
 public class RoomNotFoundException extends Exception {
 }

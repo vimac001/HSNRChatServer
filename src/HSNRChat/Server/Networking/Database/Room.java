@@ -1,6 +1,6 @@
 package HSNRChat.Server.Networking.Database;
 
-import HSNRChat.Server.Networking.Database.Exceptions.RoomNotFoundException;
+import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,8 +8,8 @@ import java.sql.SQLException;
 
 public class Room {
 
-    protected short id;
-    protected String name;
+    protected byte id;
+    protected String name = null;
 
     protected static final String TableName = "room";
 
@@ -21,13 +21,22 @@ public class Room {
     protected static final String SelectRoomsSql = "SELECT * FROM " + TableName + ";";
     protected static final String CountRoomsSql = "SELECT COUNT(*) AS count FROM " + TableName + ";";
 
-    protected Room(short id, String name) {
+    public Room(byte id) {
+        this.id = id;
+    }
+
+    protected Room(byte id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public short getId() {
+    public byte getId() {
         return this.id;
+    }
+
+    public void load() throws SQLException, RoomNotFoundException {
+        Room rm = Room.load(this.id);
+        this.name = rm.getName();
     }
 
     public String getName() {
@@ -47,17 +56,17 @@ public class Room {
 
     public static Room create(String name) throws SQLException {
         PreparedStatement s = DataManager.get().createInsertStatement(Room.InsertRoomSql);
-        s.setString(0, name);
+        s.setString(1, name);
 
-        short id = (short)DataManager.get().insert(s);
+        byte id = (byte)DataManager.get().insert(s);
 
         return new Room(id, name);
     }
 
-    public static Room load(short id) throws SQLException, RoomNotFoundException {
+    public static Room load(byte id) throws SQLException, RoomNotFoundException {
         DataManager mgr = DataManager.get();
         PreparedStatement s = mgr.createStatement(Room.SelectRoomSql);
-        s.setShort(0, id);
+        s.setShort(1, id);
 
         ResultSet rm = mgr.query(s);
         if(rm.isBeforeFirst() && rm.isAfterLast())
@@ -82,7 +91,7 @@ public class Room {
         rms.first();
 
         for(int i = 0; i < rooms; i++) {
-            rm[i] = new Room(rms.getShort(IdColumn), rms.getString(NameColumn));
+            rm[i] = new Room(rms.getByte(IdColumn), rms.getString(NameColumn));
             rms.next();
         }
 

@@ -1,4 +1,4 @@
-package HSNRChat.Server.Networking.Database.Exceptions;
+package HSNRChat.Server.Networking.Exceptions;
 
 /**
  * Created by vikto on 08.12.2015.

@@ -1,10 +1,17 @@
 
 package HSNRChat.Server.Networking.Networking;
 
+import HSNRChat.Server.Networking.Database.User;
+import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
+import HSNRChat.Server.Networking.Exceptions.ServerErrorException;
+import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
+
+import javax.jws.soap.SOAPBinding;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.List;
 
 public class ChatServer implements Runnable {
@@ -58,6 +65,34 @@ public class ChatServer implements Runnable {
 
     public boolean isRunning() {
         return running;
+    }
+
+    public void writeToUser(long sid, long uid, String message) throws UserNotFoundException, ServerErrorException, IOException {
+        for(ClientCommunicator c : clients) {
+            if(c.isAuthenticated() && c.getId() == uid) {
+                c.sendMessage(sid, message);
+                return;
+            }
+        }
+
+        try {
+            User u = User.find(uid);
+
+            if(u == null) {
+                throw new UserNotFoundException();
+            } else {
+                //TODO: User is offline
+            }
+
+        } catch (SQLException e) {
+            throw new ServerErrorException();
+        }
+    }
+
+    public void writeToRoom(long sid, short rid, String message) throws RoomNotFoundException, ServerErrorException, IOException {
+        for(ClientCommunicator c : clients) {
+            c.sendMessage(sid, rid, message);
+        }
     }
 
     public void onConnectionClosed(ClientCommunicator client) {

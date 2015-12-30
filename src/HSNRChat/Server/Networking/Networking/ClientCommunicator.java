@@ -1,11 +1,17 @@
 package HSNRChat.Server.Networking.Networking;
 
 
+import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
+import HSNRChat.Server.Networking.Exceptions.ServerErrorException;
+import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
+import HSNRChat.Server.Networking.Database.User;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.util.concurrent.Semaphore;
 
 public class ClientCommunicator implements Runnable {
@@ -19,7 +25,7 @@ public class ClientCommunicator implements Runnable {
     private InputStream in;
     private OutputStream out;
 
-    private long ssid;
+    private User user = null;
 
     private Semaphore writing;
 
@@ -103,8 +109,6 @@ public class ClientCommunicator implements Runnable {
         return ServerFunction.fromByte(this.readByte());
     }
 
-
-
     @Override
     public void run() {
         while(!Thread.currentThread().isInterrupted() && client.isConnected()) {
@@ -163,40 +167,125 @@ public class ClientCommunicator implements Runnable {
     }
 
     public long getSSID() {
-        return this.ssid;
+        return this.user.getSSID();
     }
+    public long getId() { return this.user.getId(); }
 
     public boolean isAuthenticated() {
-        return (this.ssid != 0);
+        return (this.user.getSSID() != 0);
+    }
+
+    public void sendMessage(long sid, String message) throws IOException {
+        Response rsp = new Response(ClientFunction.ReceiveB);
+        rsp.appendValue(sid);
+        rsp.appendValue(message);
+
+        this.out.write(rsp.getBytes());
+    }
+
+    public void sendMessage(long sid, short rid, String message) throws IOException {
+        Response rsp = new Response(ClientFunction.ReceiveA);
+        rsp.appendValue(sid);
+        rsp.appendValue(rid);
+        rsp.appendValue(message);
+
+        this.out.write(rsp.getBytes());
     }
 
     public void onLogin(String user, String pass) throws IOException {
         Response rsp = new Response(ServerFunction.Login);
-        long ssid = 11111;
 
-        rsp.setStatus(ResponseStatus.Success);
-        rsp.appendValue(ssid);
+        if(this.user != null) {
+            this.user.logout();
+            this.user = null;
+        }
+        try {
+            this.user = User.find(user, pass);
+        } catch (SQLException e) {
+            rsp.setStatus(ResponseStatus.ServerError);
+        } catch (UserNotFoundException e) {
+            try {
+                this.user = User.create(user, pass, this.client.getLocalAddress().getHostAddress());
+            } catch (SQLException e1) {
+                rsp.setStatus(ResponseStatus.ServerError);
+            }
+        }
+
+        if(this.user != null) {
+            rsp.setStatus(ResponseStatus.Success);
+            rsp.appendValue(this.user.getSSID());
+        }
 
         this.out.write(rsp.getBytes());
     }
 
     public void onLogout(long ssid) throws IOException {
-        if(ssid == this.ssid) {
-            //TODO: Say logout.
-            this.ssid = 0;
+        if(ssid == this.user.getSSID()) {
+            this.user.logout();
+            this.user = null;
         }
     }
 
     public void onNewMessage(long ssid, short room, String message) throws IOException {
+        Response rsp = new Response(ServerFunction.SendA);
 
+        if(ssid == this.user.getSSID()) {
+            try {
+                this.server.writeToRoom(this.user.getId(), room, message);
+                rsp.setStatus(ResponseStatus.Success);
+            } catch (RoomNotFoundException e) {
+                rsp.setStatus(ResponseStatus.RoomNotFound);
+            } catch (ServerErrorException e) {
+                rsp.setStatus(ResponseStatus.ServerError);
+            }
+        } else {
+            rsp.setStatus(ResponseStatus.InvalidSSID);
+        }
+
+        this.out.write(rsp.getBytes());
     }
 
     public void onNewMessage(long ssid, long user, String message) throws IOException {
+        Response rsp = new Response(ServerFunction.SendB);
 
+        if(ssid == this.user.getSSID()) {
+            try {
+                this.server.writeToUser(this.user.getId(), user, message);
+                rsp.setStatus(ResponseStatus.Success);
+            } catch (UserNotFoundException e) {
+                rsp.setStatus(ResponseStatus.UserNotFound);
+            } catch (ServerErrorException e) {
+                rsp.setStatus(ResponseStatus.ServerError);
+            }
+        } else {
+            rsp.setStatus(ResponseStatus.InvalidSSID);
+        }
+
+        this.out.write(rsp.getBytes());
     }
 
     public void onResolveUser(long ssid, long user) throws IOException {
+        Response rsp = new Response(ServerFunction.ResolveUser);
 
+        if(ssid == this.user.getSSID()) {
+            try {
+                User u = User.find(user);
+
+                rsp.setStatus(ResponseStatus.Success);
+                rsp.appendValue(u.getId());
+                rsp.appendValue(u.getUsername());
+                rsp.appendValue(u.getDisplayName());
+
+            } catch (SQLException e) {
+                rsp.setStatus(ResponseStatus.ServerError);
+            } catch (UserNotFoundException e) {
+                rsp.setStatus(ResponseStatus.UserNotFound);
+            }
+        } else {
+            rsp.setStatus(ResponseStatus.InvalidSSID);
+        }
+
+        this.out.write(rsp.getBytes());
     }
 
 

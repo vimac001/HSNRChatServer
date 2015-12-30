@@ -8,9 +8,17 @@ public class Response {
     ArrayList<Byte> data;
     ResponseStatus status;
 
+    private boolean isClientFunction = false;
+
     public Response(ServerFunction fnc) {
         data = new ArrayList<>();
         data.add(fnc.getId());
+    }
+
+    public Response(ClientFunction fnc) {
+        data = new ArrayList<>();
+        data.add(fnc.getId());
+        this.isClientFunction = true;
     }
 
     public void setStatus(ResponseStatus status) {
@@ -57,7 +65,8 @@ public class Response {
     }
 
     public byte[] getBytes() {
-        this.data.add(this.status.getId());
+        if(!this.isClientFunction)
+            this.data.add(this.status.getId());
 
         byte[] bts = new byte[this.data.size()];
 

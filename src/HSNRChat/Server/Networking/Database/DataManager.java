@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataManager {
-    public static final String host = "localhost";
+    public static final String host = "192.168.1.1";
     public static final int port = 3306;
-    public static final String dbnm = "hsnr-chat";
+    public static final String dbnm = "hsnrchat";
     public static final String user = "hsnrchat_server";
     public static final String pass = "4A4eLu2Opiv8Se5ec8cENez4JAtAGa";
 
@@ -17,6 +17,7 @@ public class DataManager {
 
     protected DataManager() throws SQLException {
         this.con = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + dbnm, user, pass);
+        System.out.println("Successfully connected with database server.");
     }
 
     public PreparedStatement createStatement(String sql) throws SQLException {
@@ -39,11 +40,21 @@ public class DataManager {
         return data;
     }
 
+    public boolean isConnected() throws SQLException {
+        return !con.isClosed();
+    }
+
     public static DataManager get() throws SQLException {
         if(mgr == null) {
             mgr = new DataManager();
         }
 
         return mgr;
+    }
+
+    public static void connect() throws SQLException {
+        if(mgr == null || !mgr.isConnected() ) {
+            mgr = new DataManager();
+        }
     }
 }
