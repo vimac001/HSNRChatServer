@@ -12,7 +12,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 
 public class ChatServer implements Runnable {
 
@@ -20,10 +22,12 @@ public class ChatServer implements Runnable {
 
     private ServerSocket server;
     private Thread clientListener;
-    private List<ClientCommunicator> clients;
+    private List<ClientHandle> clients;
     private boolean running = false;
 
     public ChatServer() {
+        this.clients = new ArrayList<>();
+
         try {
             server = new ServerSocket(DefaultPort);
         } catch (IOException e) {
@@ -32,6 +36,8 @@ public class ChatServer implements Runnable {
     }
 
     public ChatServer(InetAddress bindAddr) {
+        this.clients = new ArrayList<>();
+
         try {
             server = new ServerSocket(DefaultPort, -1, bindAddr);
         } catch (IOException e) {
@@ -40,6 +46,8 @@ public class ChatServer implements Runnable {
     }
 
     public ChatServer(int port) {
+        this.clients = new ArrayList<>();
+
         try {
             server = new ServerSocket(port);
         } catch (IOException e) {
@@ -48,6 +56,8 @@ public class ChatServer implements Runnable {
     }
 
     public ChatServer(int port, int backlog) {
+        this.clients = new ArrayList<>();
+
         try {
             server = new ServerSocket(port, backlog);
         } catch (IOException e) {
@@ -56,6 +66,8 @@ public class ChatServer implements Runnable {
     }
 
     public ChatServer(int port, int backlog, InetAddress bindAddr) {
+        this.clients = new ArrayList<>();
+
         try {
             server = new ServerSocket(port, backlog, bindAddr);
         } catch (IOException e) {
@@ -68,8 +80,8 @@ public class ChatServer implements Runnable {
     }
 
     public void writeToUser(long sid, long uid, String message) throws UserNotFoundException, ServerErrorException, IOException {
-        for(ClientCommunicator c : clients) {
-            if(c.isAuthenticated() && c.getId() == uid) {
+        for(ClientHandle c : clients) {
+            if (c.isAuthenticated() && c.getUser().getId() == uid) {
                 c.sendMessage(sid, message);
                 return;
             }
@@ -82,6 +94,8 @@ public class ChatServer implements Runnable {
                 throw new UserNotFoundException();
             } else {
                 //TODO: User is offline
+                //Vorschlag: Eine offline history.
+                throw new ServerErrorException();
             }
 
         } catch (SQLException e) {
@@ -90,13 +104,20 @@ public class ChatServer implements Runnable {
     }
 
     public void writeToRoom(long sid, short rid, String message) throws RoomNotFoundException, ServerErrorException, IOException {
-        for(ClientCommunicator c : clients) {
+       for(ClientHandle c : clients) {
             c.sendMessage(sid, rid, message);
-        }
+       }
     }
 
-    public void onConnectionClosed(ClientCommunicator client) {
+    public void onConnectionClosed(ClientHandle client) {
+        System.out.print("Connection closed @(");
+        System.out.print(client.getIpAddrString());
+        System.out.print(':');
+        System.out.print(client.getPort());
+        System.out.println(")");
+
         this.clients.remove(client);
+        Thread.currentThread().interrupt();
     }
 
     @Override
@@ -122,8 +143,13 @@ public class ChatServer implements Runnable {
         while (!Thread.currentThread().isInterrupted() && server.isBound()) {
             try {
                 client = server.accept();
+                System.out.print("Incomming connection @(");
+                System.out.print(client.getInetAddress().getHostAddress());
+                System.out.print(':');
+                System.out.print(client.getPort());
+                System.out.println(")");
 
-                clients.add(new ClientCommunicator(client, this));
+                this.clients.add(new ClientHandle(client, this));
             } catch (IOException e) {
                 e.printStackTrace();
             }

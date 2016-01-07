@@ -2,9 +2,7 @@ package HSNRChat.Server.Networking.Database;
 
 import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Random;
 
 public class User {
@@ -30,7 +28,9 @@ public class User {
     protected static final String InsertUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + ") VALUES (?,?,SHA1(?));";
     protected static final String InserAndLogintUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + "," + SSIDColumn + "," + AddrColumn + ") VALUES (?,?,SHA1(?),?,?);";
     protected static final String SelectUserById = "SELECT * FROM " + tableName + " WHERE " + IdColumn + " = ?;";
+    protected static final String SelectUserBySSID = "SELECT * FROM " + tableName + " WHERE " + SSIDColumn + " = ? AND " + AddrColumn + " LIKE ?;";
     protected static final String SelectUserByLogin = "SELECT * FROM " + tableName + " WHERE " + UNameColumn + " LIKE ? AND " + UPassColumn + " LIKE SHA1(?);";
+    protected static final String SetSSIDById = "UPDATE " + tableName + " SET " + SSIDColumn + "=?, " + AddrColumn + "=? WHERE " + IdColumn + "=?;";
 
     public User(long id) {
         this.id = id;
@@ -78,6 +78,7 @@ public class User {
         return this.addr;
     }
 
+    /*
     public void setFirstName(String fname) {
         //TODO: set
     }
@@ -85,14 +86,29 @@ public class User {
     public void setLastName(String lname) {
         //TODO: set
     }
+    */
 
-    public long setSSID(String addr) {
-        //TODO: set
+    public long setSSID(String addr) throws SQLException {
+        long ssid = generateSSID();
+
+        PreparedStatement s = DataManager.get().createStatement(User.SetSSIDById);
+        s.setLong(1, ssid);
+        s.setString(2, addr);
+        s.setLong(3, this.id);
+
+        if(s.execute()) {
+            this.ssid = ssid;
+        }
+
         return this.ssid;
     }
 
-    public void logout() {
-        //TODO: set
+
+    public void logout() throws SQLException {
+        PreparedStatement s = DataManager.get().createStatement(User.SetSSIDById);
+        s.setNull(1, Types.BIGINT);
+        s.setString(2, this.addr);
+        s.setLong(3, this.id);
     }
 
     public static boolean idExists(long id) throws SQLException {
@@ -118,7 +134,7 @@ public class User {
         long id;
         do {
             do {
-                id = r.nextLong();
+                id = (long)(r.nextDouble() * 1000000000000L);
             } while (id < 100000000000L || id > 999999999999L);
         }while(idExists(id));
 
@@ -144,6 +160,8 @@ public class User {
         s.setString(2, uname);
         s.setString(3, upass);
 
+        s.execute();
+
         return new User(id, uname);
     }
 
@@ -157,6 +175,8 @@ public class User {
         s.setLong(4, ssid);
         s.setString(5, addr);
 
+        s.execute();
+
         return new User(id, uname, null, null, ssid, addr);
     }
 
@@ -165,7 +185,7 @@ public class User {
         s.setLong(1, id);
 
         ResultSet r = s.executeQuery();
-        if(r.isBeforeFirst() && r.isAfterLast())
+        if(r.isBeforeFirst() || !r.next())
             throw new UserNotFoundException();
 
         r.first();
@@ -178,7 +198,20 @@ public class User {
         s.setString(2, upass);
 
         ResultSet r = s.executeQuery();
-        if(r.isBeforeFirst() && r.isAfterLast())
+        if(r.isBeforeFirst() || !r.next())
+            throw new UserNotFoundException();
+
+        r.first();
+        return new User(r.getByte(IdColumn), r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
+    }
+
+    public static User find(long ssid, String ipAddr) throws SQLException, UserNotFoundException {
+        PreparedStatement s = DataManager.get().createStatement(User.SelectUserBySSID);
+        s.setLong(1, ssid);
+        s.setString(2, ipAddr);
+
+        ResultSet r = s.executeQuery();
+        if(r.isBeforeFirst() || !r.next())
             throw new UserNotFoundException();
 
         r.first();
