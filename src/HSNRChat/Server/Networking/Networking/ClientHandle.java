@@ -1,10 +1,7 @@
 package HSNRChat.Server.Networking.Networking;
 
 import HSNRChat.Server.Networking.Database.User;
-import HSNRChat.Server.Networking.Exceptions.InvalidSSIDException;
-import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
-import HSNRChat.Server.Networking.Exceptions.ServerErrorException;
-import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
+import HSNRChat.Server.Networking.Exceptions.*;
 import HSNRChat.Server.Networking.Networking.Streaming.StructuredInputStream;
 import HSNRChat.Server.Networking.Networking.Streaming.StructuredOutputStream;
 
@@ -81,11 +78,14 @@ public class ClientHandle {
             } catch (SQLException e) {
                 throw new ServerErrorException();
             } catch (UserNotFoundException e) {
+                System.out.println("Wrong SSID: " + ssid);
                 throw new InvalidSSIDException();
             }
         } else {
-            if(this.user.getSSID() != ssid)
+            if(this.user.getSSID() != ssid) {
+                System.out.println("Wrong ssid: " + ssid);
                 throw new InvalidSSIDException();
+            }
         }
 
         return this.user != null;
@@ -178,12 +178,17 @@ public class ClientHandle {
             try {
                 this.user = User.find(user, pass);
             } catch (UserNotFoundException e) {
-                this.user = User.create(user, pass, this.getIpAddrString());
+                try {
+                    User u = User.find(user);
+                    this.user = null;
+                } catch (UserNotFoundException e1) {
+                    this.user = User.create(user, pass, this.getIpAddrString());
+                }
             }
 
-            if(this.user != null) {
+            if(this.user != null) {;
                 rsp.setStatus(ResponseStatus.Success);
-                rsp.appendValue(this.user.getSSID());
+                rsp.appendValue(this.user.setSSID(this.getIpAddrString()));
             } else {
                 rsp.setStatus(ResponseStatus.UserNotFound);
             }

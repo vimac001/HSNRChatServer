@@ -1,5 +1,6 @@
 package HSNRChat.Server.Networking.Database;
 
+import HSNRChat.Server.Networking.Exceptions.IncorrectPasswordException;
 import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 
 import java.sql.*;
@@ -13,24 +14,25 @@ public class User {
     protected long ssid;
     protected String addr = null;
 
-    protected static final String tableName = "user";
+    public static final String tableName = "user";
 
-    protected static final String IdColumn = "id";
-    protected static final String UNameColumn = "uname";
-    protected static final String UPassColumn = "upass";
-    protected static final String FNameColumn = "fname";
-    protected static final String LNameColumn = "lname";
-    protected static final String SSIDColumn = "ssid";
-    protected static final String AddrColumn = "ipaddr";
+    public static final String IdColumn = "id";
+    public static final String UNameColumn = "uname";
+    public static final String UPassColumn = "upass";
+    public static final String FNameColumn = "fname";
+    public static final String LNameColumn = "lname";
+    public static final String SSIDColumn = "ssid";
+    public static final String AddrColumn = "ipaddr";
 
-    protected static final String CheckUserIdExistsSql = "SELECT COUNT(" + IdColumn + ") FROM user WHERE " + IdColumn + " = ?;";
-    protected static final String CheckSSIDExistsSql = "SELECT COUNT(" + SSIDColumn + ") FROM user WHERE " + SSIDColumn + "= ?;";
-    protected static final String InsertUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + ") VALUES (?,?,SHA1(?));";
-    protected static final String InserAndLogintUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + "," + SSIDColumn + "," + AddrColumn + ") VALUES (?,?,SHA1(?),?,?);";
-    protected static final String SelectUserById = "SELECT * FROM " + tableName + " WHERE " + IdColumn + " = ?;";
-    protected static final String SelectUserBySSID = "SELECT * FROM " + tableName + " WHERE " + SSIDColumn + " = ? AND " + AddrColumn + " LIKE ?;";
-    protected static final String SelectUserByLogin = "SELECT * FROM " + tableName + " WHERE " + UNameColumn + " LIKE ? AND " + UPassColumn + " LIKE SHA1(?);";
-    protected static final String SetSSIDById = "UPDATE " + tableName + " SET " + SSIDColumn + "=?, " + AddrColumn + "=? WHERE " + IdColumn + "=?;";
+    public static final String CheckUserIdExistsSql = "SELECT COUNT(" + IdColumn + ") FROM user WHERE " + IdColumn + " = ?;";
+    public static final String CheckSSIDExistsSql = "SELECT COUNT(" + SSIDColumn + ") FROM user WHERE " + SSIDColumn + "= ?;";
+    public static final String InsertUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + ") VALUES (?,?,SHA1(?));";
+    public static final String InserAndLogintUserSql = "INSERT INTO " + tableName + " (" + IdColumn + "," + UNameColumn + "," + UPassColumn + "," + SSIDColumn + "," + AddrColumn + ") VALUES (?,?,SHA1(?),?,?);";
+    public static final String SelectUserById = "SELECT * FROM " + tableName + " WHERE " + IdColumn + " = ?;";
+    public static final String SelectUserBySSID = "SELECT * FROM " + tableName + " WHERE " + SSIDColumn + " = ? AND " + AddrColumn + " LIKE ?;";
+    public static final String SelectUserByUName = "SELECT * FROM " + tableName + " WHERE " + UNameColumn + " LIKE ?;";
+    public static final String SelectUserByLogin = "SELECT * FROM " + tableName + " WHERE " + UNameColumn + " LIKE ? AND " + UPassColumn + " = SHA1(?);";
+    public static final String SetSSIDById = "UPDATE " + tableName + " SET " + SSIDColumn + "=?, " + AddrColumn + "=? WHERE " + IdColumn + "=?;";
 
     public User(long id) {
         this.id = id;
@@ -96,9 +98,8 @@ public class User {
         s.setString(2, addr);
         s.setLong(3, this.id);
 
-        if(s.execute()) {
-            this.ssid = ssid;
-        }
+        s.execute();
+        this.ssid = ssid;
 
         return this.ssid;
     }
@@ -145,9 +146,7 @@ public class User {
         Random r = new Random();
         long ssid;
         do {
-            do {
-                ssid = r.nextLong();
-            } while (ssid < 100000000000L);
+            ssid = (long)(r.nextDouble() * 1000000000000000000L);
         }while(ssidExists(ssid));
 
         return ssid;
@@ -189,7 +188,28 @@ public class User {
             throw new UserNotFoundException();
 
         r.first();
-        return new User(r.getByte(IdColumn), r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
+        return new User(id, r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
+    }
+
+    public static User find(String uname) throws SQLException, UserNotFoundException {
+        PreparedStatement s = DataManager.get().createStatement(User.SelectUserByUName);
+        s.setString(1, uname);
+
+        ResultSet r = s.executeQuery();
+        if(!r.next()) {
+            throw new UserNotFoundException();
+        }
+
+        r.first();
+
+        long id = r.getLong(IdColumn);
+        String fname = r.getString(FNameColumn);
+        String lname = r.getString(LNameColumn);
+        long ssid = r.getLong(SSIDColumn);
+        String addr = r.getString(AddrColumn);
+
+        return new User(id, uname, fname, lname, ssid, addr);
+
     }
 
     public static User find(String uname, String upass) throws SQLException, UserNotFoundException {
@@ -198,11 +218,12 @@ public class User {
         s.setString(2, upass);
 
         ResultSet r = s.executeQuery();
-        if(r.isBeforeFirst() || !r.next())
+        if(!r.next()) {
             throw new UserNotFoundException();
+        }
 
         r.first();
-        return new User(r.getByte(IdColumn), r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
+        return new User(r.getLong(IdColumn), uname, r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
     }
 
     public static User find(long ssid, String ipAddr) throws SQLException, UserNotFoundException {
@@ -211,11 +232,11 @@ public class User {
         s.setString(2, ipAddr);
 
         ResultSet r = s.executeQuery();
-        if(r.isBeforeFirst() || !r.next())
+        if(!r.next())
             throw new UserNotFoundException();
 
         r.first();
-        return new User(r.getByte(IdColumn), r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), r.getLong(SSIDColumn), r.getString(AddrColumn));
+        return new User(r.getLong(IdColumn), r.getString(UNameColumn), r.getString(FNameColumn), r.getString(LNameColumn), ssid, ipAddr);
     }
 
 }

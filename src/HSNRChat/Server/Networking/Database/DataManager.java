@@ -5,18 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataManager {
-    public static final String host = "192.168.1.100";
+    public static final String host = "127.0.0.1";
     public static final int port = 3306;
     public static final String dbnm = "hsnrchat";
     public static final String user = "hsnrchat_server";
-    public static final String pass = "4A4eLu2Opiv8Se5ec8cENez4JAtAGa";
+    public static final String pass = "f6rIgIqex3NaFu4558TAfEXE42hatO";//"4A4eLu2Opiv8Se5ec8cENez4JAtAGa";
 
     protected static DataManager mgr = null;
 
     protected Connection con;
 
     protected DataManager() throws SQLException {
-        this.con = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + dbnm, user, pass);
+        this.con = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + dbnm + "?useUnicode=true&characterEncoding=utf-8&characterSetResults=utf8", user, pass);
         System.out.println("Successfully connected with database server.");
     }
 

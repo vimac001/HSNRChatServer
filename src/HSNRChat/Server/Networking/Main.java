@@ -1,9 +1,12 @@
 package HSNRChat.Server.Networking;
 
 import HSNRChat.Server.Networking.Database.*;
+import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 import HSNRChat.Server.Networking.Networking.ChatServer;
 
 import java.io.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Scanner;
 import java.util.function.Consumer;
