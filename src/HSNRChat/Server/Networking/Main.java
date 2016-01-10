@@ -1,14 +1,16 @@
 package HSNRChat.Server.Networking;
 
-import HSNRChat.Server.Networking.Database.*;
-import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
+import HSNRChat.Server.Networking.Database.DataManager;
+import HSNRChat.Server.Networking.Database.Room;
+import HSNRChat.Server.Networking.Database.Transition;
+import HSNRChat.Server.Networking.Database.TransitionKind;
 import HSNRChat.Server.Networking.Networking.ChatServer;
 
-import java.io.*;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 

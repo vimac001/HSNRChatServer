@@ -1,11 +1,11 @@
 package HSNRChat.Server.Networking.Networking.Streaming;
 
+import HSNRChat.Server.Networking.Networking.ClientFunction;
+import HSNRChat.Server.Networking.Networking.ServerFunction;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import HSNRChat.Server.Networking.Networking.ClientFunction;
-import HSNRChat.Server.Networking.Networking.ServerFunction;
 
 public class StructuredOutputStream extends DataOutputStream {
     /**

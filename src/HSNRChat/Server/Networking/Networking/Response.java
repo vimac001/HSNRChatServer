@@ -1,12 +1,9 @@
 package HSNRChat.Server.Networking.Networking;
 
-import HSNRChat.Server.Networking.Networking.Streaming.StructuredInputStream;
 import HSNRChat.Server.Networking.Networking.Streaming.StructuredOutputStream;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 public class Response {

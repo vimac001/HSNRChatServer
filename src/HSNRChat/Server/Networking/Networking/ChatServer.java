@@ -6,7 +6,6 @@ import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
 import HSNRChat.Server.Networking.Exceptions.ServerErrorException;
 import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 
-import javax.jws.soap.SOAPBinding;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -14,11 +13,10 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 
 public class ChatServer implements Runnable {
 
-    public static final int DefaultPort = 1337;
+    public static final int DefaultPort = 1338;
 
     private ServerSocket server;
     private Thread clientListener;

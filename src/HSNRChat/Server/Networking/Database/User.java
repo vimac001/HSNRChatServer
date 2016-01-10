@@ -1,9 +1,11 @@
 package HSNRChat.Server.Networking.Database;
 
-import HSNRChat.Server.Networking.Exceptions.IncorrectPasswordException;
 import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Random;
 
 public class User {

@@ -1,8 +1,6 @@
 package HSNRChat.Server.Networking.Database;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DataManager {
     public static final String host = "127.0.0.1";

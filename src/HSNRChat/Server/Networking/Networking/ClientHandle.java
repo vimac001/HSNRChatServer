@@ -1,7 +1,10 @@
 package HSNRChat.Server.Networking.Networking;
 
 import HSNRChat.Server.Networking.Database.User;
-import HSNRChat.Server.Networking.Exceptions.*;
+import HSNRChat.Server.Networking.Exceptions.InvalidSSIDException;
+import HSNRChat.Server.Networking.Exceptions.RoomNotFoundException;
+import HSNRChat.Server.Networking.Exceptions.ServerErrorException;
+import HSNRChat.Server.Networking.Exceptions.UserNotFoundException;
 import HSNRChat.Server.Networking.Networking.Streaming.StructuredInputStream;
 import HSNRChat.Server.Networking.Networking.Streaming.StructuredOutputStream;
 
@@ -189,6 +192,7 @@ public class ClientHandle {
             if(this.user != null) {;
                 rsp.setStatus(ResponseStatus.Success);
                 rsp.appendValue(this.user.setSSID(this.getIpAddrString()));
+                rsp.appendValue(this.user.getId());
             } else {
                 rsp.setStatus(ResponseStatus.UserNotFound);
             }
