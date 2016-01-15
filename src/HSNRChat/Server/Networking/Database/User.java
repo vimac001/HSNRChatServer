@@ -71,7 +71,17 @@ public class User {
     }
 
     public String getDisplayName() {
-        return this.fname + " " + this.lname;
+        String nick = "";
+        if(this.fname != null)
+            nick += this.fname;
+
+        if(this.lname != null)
+            nick += ' ' + this.lname;
+
+        if(nick.isEmpty())
+            nick = this.uname;
+
+        return nick;
     }
 
     public long getSSID() {
@@ -186,7 +196,7 @@ public class User {
         s.setLong(1, id);
 
         ResultSet r = s.executeQuery();
-        if(r.isBeforeFirst() || !r.next())
+        if(!r.next())
             throw new UserNotFoundException();
 
         r.first();

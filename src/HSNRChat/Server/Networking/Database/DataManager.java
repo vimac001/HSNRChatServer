@@ -3,7 +3,7 @@ package HSNRChat.Server.Networking.Database;
 import java.sql.*;
 
 public class DataManager {
-    public static final String host = "127.0.0.1";
+    public static final String host = "127.0.0.1"; //"192.168.1.100";
     public static final int port = 3306;
     public static final String dbnm = "hsnrchat";
     public static final String user = "hsnrchat_server";
